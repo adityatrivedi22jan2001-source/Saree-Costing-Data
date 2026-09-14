@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saree Costing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF6F0;
+    --surface:#FFFFFF;
+    --text:#2A2118;
+    --text-soft:#7A6C5D;
+    --border:#E8DFD3;
+    --accent:#7A2E2E;
+    --accent-soft:#F1DEDE;
+    --gold:#B8860B;
+    --total-bg:#2F4A3D;
+    --radius:10px;
+    --danger:#B3413E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif; font-weight:600; margin:0;}
+
+  /* ---------- Login screen ---------- */
+  #loginScreen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .loginCard{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:36px 28px; max-width:340px; width:100%; text-align:center;
+  }
+  .loginCard h1{font-size:1.6rem; margin-bottom:6px;}
+  .loginCard p{color:var(--text-soft); font-size:0.9rem; margin:0 0 20px;}
+  .loginCard input{
+    width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:8px;
+    font-size:1rem; margin-bottom:12px; font-family:inherit;
+  }
+  .loginCard button{width:100%;}
+  #loginError{color:var(--danger); font-size:0.85rem; min-height:18px; margin-bottom:6px;}
+
+  /* ---------- App shell ---------- */
+  #app{display:none; max-width:900px; margin:0 auto; padding:20px 16px 100px;}
+  header.appHeader{
+    display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:8px;
+  }
+  header.appHeader h1{font-size:1.7rem;}
+  header.appHeader span{color:var(--text-soft); font-size:0.85rem;}
+
+  .tabs{display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border);}
+  .tabBtn{
+    background:none; border:none; padding:10px 4px; margin-right:18px; font-size:1rem;
+    font-family:'Inter'; color:var(--text-soft); cursor:pointer; border-bottom:2px solid transparent;
+    font-weight:600;
+  }
+  .tabBtn.active{color:var(--accent); border-bottom-color:var(--accent);}
+
+  .page{display:none;}
+  .page.active{display:block;}
+
+  /* ---------- Buttons / inputs ---------- */
+  button{
+    cursor:pointer; border:none; border-radius:8px; padding:11px 18px; font-size:0.95rem;
+    font-family:'Inter'; font-weight:600; background:var(--accent); color:#fff; transition:opacity .15s;
+  }
+  button:hover{opacity:0.88;}
+  button.secondary{background:transparent; color:var(--accent); border:1px solid var(--accent);}
+  input[type=text], input[type=number], select{
+    padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:0.95rem;
+    font-family:inherit; background:#fff; width:100%;
+  }
+  label{font-size:0.82rem; color:var(--text-soft); display:block; margin-bottom:5px; font-weight:600;}
+  .field{margin-bottom:14px;}
+
+  /* ---------- Search row ---------- */
+  .searchRow{display:flex; gap:10px; margin-bottom:22px;}
+  .searchRow input{flex:1;}
+
+  /* ---------- Result card ---------- */
+  .resultCard{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; margin-bottom:28px;
+  }
+  .resultGrid{display:grid; grid-template-columns:220px 1fr; gap:0;}
+  @media(max-width:640px){ .resultGrid{grid-template-columns:1fr;} }
+  .resultPhoto{background:var(--accent-soft); display:flex; align-items:center; justify-content:center; min-height:220px;}
+  .resultPhoto img{width:100%; height:100%; object-fit:cover; display:block;}
+  .resultPhoto .noPhoto{color:var(--accent); font-size:0.85rem; padding:20px; text-align:center;}
+  .resultInfo{padding:20px;}
+  .resultInfo h2{font-size:1.25rem; margin-bottom:2px;}
+  .resultInfo .codeTag{color:var(--text-soft); font-size:0.85rem; margin-bottom:14px;}
+
+  .costRow{
+    display:flex; align-items:center; justify-content:space-between; padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .costRow:last-child{border-bottom:none;}
+  .costRow .left{display:flex; align-items:center; gap:10px;}
+  .costRow input[type=checkbox]{width:18px; height:18px; accent-color:var(--accent);}
+  .costRow .jobName{font-weight:600; font-size:0.92rem;}
+  .costRow .jobSub{color:var(--text-soft); font-size:0.8rem;}
+  .costRow .price{font-weight:600; font-variant-numeric:tabular-nums;}
+
+  .totalBar{
+    background:var(--total-bg); color:#fff; padding:16px 20px; display:flex;
+    align-items:center; justify-content:space-between; font-family:'Fraunces',serif;
+  }
+  .totalBar .amt{font-size:1.5rem; font-weight:700;}
+
+  /* ---------- Browse grid ---------- */
+  .browseHead{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .browseHead h3{font-size:1.05rem; color:var(--text-soft);}
+  .browseGrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px;}
+  .browseItem{
+    background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden;
+    cursor:pointer; text-align:center;
+  }
+  .browseItem img{width:100%; height:110px; object-fit:cover; display:block; background:var(--accent-soft);}
+  .browseItem .bi-label{padding:8px 6px; font-size:0.78rem;}
+  .browseItem .bi-code{color:var(--text-soft); font-size:0.72rem;}
+
+  /* ---------- Custom costing form ---------- */
+  .formGrid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media(max-width:640px){ .formGrid{grid-template-columns:1fr;} }
+
+  .jobCard{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; margin-bottom:12px;
+  }
+  .jobCard .jobHead{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .jobCard .jobHead .left{display:flex; align-items:center; gap:10px;}
+  .jobCard .jobHead h3{font-size:1rem; font-family:'Inter'; font-weight:700;}
+  .jobCard .jobHead .jobPrice{font-weight:700; color:var(--accent);}
+  .jobCard input[type=checkbox]{width:18px; height:18px; accent-color:var(--accent);}
+
+  .photoUpload{
+    border:2px dashed var(--border); border-radius:8px; padding:18px; text-align:center;
+    color:var(--text-soft); font-size:0.85rem; cursor:pointer; margin-bottom:14px; background:#fff;
+  }
+  .photoUpload img{max-width:100%; max-height:160px; border-radius:6px; display:block; margin:0 auto 8px;}
+
+  .stickyTotal{
+    position:sticky; bottom:0; background:var(--total-bg); color:#fff; padding:16px 20px;
+    border-radius:var(--radius); display:flex; align-items:center; justify-content:space-between;
+    margin-top:6px; font-family:'Fraunces',serif;
+  }
+  .stickyTotal .amt{font-size:1.5rem; font-weight:700;}
+
+  .saveRow{display:flex; gap:10px; margin-top:14px; justify-content:flex-end; flex-wrap:wrap;}
+  #customMsg{font-size:0.85rem; margin-top:8px; min-height:18px;}
+  #customMsg.ok{color:#2F6B3E;}
+  #customMsg.err{color:var(--danger);}
+
+  .hint{color:var(--text-soft); font-size:0.8rem; margin-top:-6px; margin-bottom:10px;}
+  .configWarn{
+    background:#FFF4E5; border:1px solid #E8C68A; color:#7A5A19; padding:12px 14px; border-radius:8px;
+    font-size:0.85rem; margin-bottom:16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen">
+  <div class="loginCard">
+    <h1>Saree Costing</h1>
+    <p>Enter the password to open the app</p>
+    <input type="text" id="passwordInput" placeholder="Password" autocomplete="off">
+    <div id="loginError"></div>
+    <button onclick="tryLogin()">Open</button>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app">
+  <header class="appHeader">
+    <h1>Saree Costing</h1>
+    <span id="syncStatus">Loading price list…</span>
+  </header>
+
+  <div id="configWarnBox"></div>
+
+  <div class="tabs">
+    <button class="tabBtn active" onclick="showPage('lookup')">Code Lookup</button>
+    <button class="tabBtn" onclick="showPage('custom')">Custom Costing</button>
+  </div>
+
+  <!-- ---------------- PAGE 1: CODE LOOKUP ---------------- -->
+  <div class="page active" id="page-lookup">
+    <div class="searchRow">
+      <input type="text" id="codeSearchInput" placeholder="Enter saree code, number or name">
+      <button onclick="searchCode()">Search</button>
+    </div>
+
+    <div id="lookupResultBox"></div>
+
+    <div class="browseHead">
+      <h3>Or browse all sarees</h3>
+    </div>
+    <div class="browseGrid" id="browseGrid"></div>
+  </div>
+
+  <!-- ---------------- PAGE 2: CUSTOM COSTING ---------------- -->
+  <div class="page" id="page-custom">
+
+    <div class="formGrid">
+      <div class="field">
+        <label>Code (leave blank to auto-generate)</label>
+        <input type="text" id="cc-code" placeholder="e.g. SR-104">
+      </div>
+      <div class="field">
+        <label>Saree Name</label>
+        <input type="text" id="cc-name" placeholder="e.g. Kanjivaram Green">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Photo</label>
+      <div class="photoUpload" id="photoUploadBox" onclick="document.getElementById('cc-photo-input').click()">
+        <div id="photoPreviewArea">Tap to upload a photo of this saree</div>
+      </div>
+      <input type="file" id="cc-photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event)">
+    </div>
+
+    <!-- Fabric -->
+    <div class="jobCard">
+      <div class="jobHead">
+        <div class="left">
+          <input type="checkbox" id="cc-fabric-check" checked onchange="updateCustomTotal()">
+          <h3>Fabric</h3>
+        </div>
+      </div>
+      <input type="number" id="cc-fabric-price" placeholder="Fabric purchase rate" oninput="updateCustomTotal()">
+    </div>
+
+    <!-- Screen Print -->
+    <div class="jobCard">
+      <div class="jobHead">
+        <div class="left"><input type="checkbox" id="cc-screenPrint-check" onchange="updateCustomTotal()"><h3>Screen Print</h3></div>
+        <span class="jobPrice" id="cc-screenPrint-price">₹0</span>
+      </div>
+      <select id="cc-screenPrint-select" onchange="onDropdownChange('screenPrint')"><option value="">-- choose type --</option></select>
+    </div>
+
+    <!-- Digital -->
+    <div class="jobCard">
+      <div class="jobHead">
+        <div class="left"><input type="checkbox" id="cc-digital-check" onchange="updateCustomTotal()"><h3>Digital Print</h3></div>
+        <span class="jobPrice" id="cc-digital-price">₹0</span>
+      </div>
+      <select id="cc-digital-select" onchange="onDropdownChange('digital')"><option value="">-- choose size --</option></select>
+    </div>
+
+    <!-- Batik -->
+    <div class="jobCard">
+      <div class="jobHead">
+        <div class="left"><input type="checkbox" id="cc-batik-check" onchange="updateCustomTotal()"><h3>Batik</h3></div>
+        <span class="jobPrice" id="cc-batik-price">₹0</span>
+      </div>
+      <select id="cc-batik-select" onchange="onDropdownChange('batik')"><option value="">-- choose design --</option></select>
+    </div>
+
+    <!-- Embroidery (searchable) -->
+    <div class="jobCard">
+      <div class="jobHead">
+        <div class="left"><input type="checkbox" id="cc-embroidery-check" onchange="updateCustomTotal()"><h3>Embroidery Work</h3></div>
+        <span class="jobPrice" id="cc-embroidery-price">₹0</span>
+      </div>
+      <input type="text" id="cc-embroidery-search" list="dl-embroidery" placeholder="Type to search embroidery designs…" oninput="onSearchableChange('embroidery')">
+      <datalist id="dl-embroidery"></datalist>
+      <div class="hint">Start typing to search the full list</div>
+    </div>
+
+    <!-- Aari -->
+    <div class="jobCard">
+      <div class="jobHead">
+        <div class="left"><input type="checkbox" id="cc-aari-check" onchange="updateCustomTotal()"><h3>Aari Work</h3></div>
+        <span class="jobPrice" id="cc-aari-price">₹0</span>
+      </div>
+      <select id="cc-aari-select" onchange="onDropdownChange('aari')"><option value="">-- choose design --</option></select>
+    </div>
+
+    <!-- Attach (searchable) -->
+    <div class="jobCard">
+      <div class="jobHead">
+        <div class="left"><input type="checkbox" id="cc-attach-check" onchange="updateCustomTotal()"><h3>Attach Work</h3></div>
+        <span class="jobPrice" id="cc-attach-price">₹0</span>
+      </div>
+      <input type="text" id="cc-attach-search" list="dl-attach" placeholder="Type to search attach work…" oninput="onSearchableChange('attach')">
+      <datalist id="dl-attach"></datalist>
+      <div class="hint">Start typing to search the full list</div>
+    </div>
+
+    <div class="stickyTotal">
+      <span>Total Cost</span>
+      <span class="amt" id="customTotalAmt">₹0</span>
+    </div>
+
+    <div class="saveRow">
+      <button class="secondary" onclick="resetCustomForm()">Clear</button>
+      <button onclick="saveCustomCosting()">Save to Sheet</button>
+    </div>
+    <div id="customMsg"></div>
+  </div>
+
+</div>
+
+<script>
+/* ================= CONFIG — EDIT THESE THREE LINES ================= */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxuX6m-zSAaGd5b3C3RH4QSY8lSvre0piIZ5Vy0YiY5q8ya4qTYze6JE4JkGLhGuCLB/exec";
+const SECRET_KEY       = "9326469898ADITYA"; // must match SECRET_KEY in Code.gs
+const APP_PASSWORD     = "VPPPL1121";            // password to open this app on a phone/browser
+/* ====================================================================== */
+
+let appData = { screenPrint:[], digital:[], embroidery:[], attach:[], batik:[], aari:[], codes:[] };
+let uploadedPhotoUrl = "";
+
+/* ---------------- Login ---------------- */
+function tryLogin(){
+  const val = document.getElementById('passwordInput').value;
+  if(val === APP_PASSWORD){
+    sessionStorage.setItem('sareeAppUnlocked','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    boot();
+  } else {
+    document.getElementById('loginError').innerText = "Wrong password, try again";
+  }
+}
+document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') tryLogin(); });
+
+window.addEventListener('DOMContentLoaded', () => {
+  if(sessionStorage.getItem('sareeAppUnlocked') === '1'){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    boot();
+  }
+});
+
+/* ---------------- Boot / data load ---------------- */
+function boot(){
+  if(APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0 || APPS_SCRIPT_URL === ""){
+    document.getElementById('configWarnBox').innerHTML =
+      '<div class="configWarn">⚠ This app isn\'t connected to a Google Sheet yet. Follow SETUP.md to deploy Code.gs and paste the Web App URL into index.html.</div>';
+    document.getElementById('syncStatus').innerText = "Not connected";
+    populateAllDropdowns();
+    return;
+  }
+  fetchData();
+}
+
+function fetchData(){
+  document.getElementById('syncStatus').innerText = "Loading price list…";
+  fetch(`${APPS_SCRIPT_URL}?action=getData&key=${encodeURIComponent(SECRET_KEY)}`)
+    .then(r => r.json())
+    .then(data => {
+      if(data.error){
+        document.getElementById('syncStatus').innerText = "Error: " + data.error;
+        return;
+      }
+      appData = data;
+      document.getElementById('syncStatus').innerText = "Synced • " + appData.codes.length + " sarees";
+      populateAllDropdowns();
+      renderBrowseGrid();
+    })
+    .catch(err => {
+      document.getElementById('syncStatus').innerText = "Could not connect to sheet";
+      console.error(err);
+    });
+}
+
+/* ---------------- Tabs ---------------- */
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tabBtn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ================= PAGE 1: CODE LOOKUP ================= */
+document.getElementById('codeSearchInput').addEventListener('keydown', e => { if(e.key==='Enter') searchCode(); });
+
+function searchCode(){
+  const q = document.getElementById('codeSearchInput').value.trim().toLowerCase();
+  if(!q) return;
+  const match = appData.codes.find(c =>
+    c.code.toLowerCase() === q || c.code.toLowerCase().includes(q) || (c.name||"").toLowerCase().includes(q)
+  );
+  const box = document.getElementById('lookupResultBox');
+  if(!match){
+    box.innerHTML = '<p style="color:var(--text-soft)">No saree found for "' + q + '". Try the browse list below, or add it from Custom Costing.</p>';
+    return;
+  }
+  renderResult(match);
+}
+
+function loadCodeByValue(code){
+  document.getElementById('codeSearchInput').value = code;
+  searchCode();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderResult(item){
+  const jobs = [
+    {key:'fabric', label:'Fabric', sub:'', price:item.fabric},
+    {key:'screenPrint', label:'Screen Print', sub:item.screenPrint.name, price:item.screenPrint.price},
+    {key:'digital', label:'Digital Print', sub:item.digital.name, price:item.digital.price},
+    {key:'batik', label:'Batik', sub:item.batik.name, price:item.batik.price},
+    {key:'embroidery', label:'Embroidery Work', sub:item.embroidery.name, price:item.embroidery.price},
+    {key:'aari', label:'Aari Work', sub:item.aari.name, price:item.aari.price},
+    {key:'attach', label:'Attach Work', sub:item.attach.name, price:item.attach.price},
+  ].filter(j => j.price > 0 || j.key==='fabric');
+
+  const photoHtml = item.photoUrl
+    ? `<img src="${item.photoUrl}" alt="${item.name}">`
+    : `<div class="noPhoto">No photo added</div>`;
+
+  const rowsHtml = jobs.map((j,i) => `
+    <div class="costRow">
+      <div class="left">
+        <input type="checkbox" checked data-price="${j.price}" onchange="recalcLookupTotal()" id="lk-${i}">
+        <div>
+          <div class="jobName">${j.label}</div>
+          ${j.sub ? `<div class="jobSub">${j.sub}</div>` : ''}
+        </div>
+      </div>
+      <div class="price">₹${j.price}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('lookupResultBox').innerHTML = `
+    <div class="resultCard">
+      <div class="resultGrid">
+        <div class="resultPhoto">${photoHtml}</div>
+        <div class="resultInfo">
+          <h2>${item.name || 'Untitled'}</h2>
+          <div class="codeTag">Code: ${item.code}</div>
+          ${rowsHtml}
+        </div>
+      </div>
+      <div class="totalBar">
+        <span>Total Cost</span>
+        <span class="amt" id="lookupTotalAmt">₹${jobs.reduce((s,j)=>s+j.price,0)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function recalcLookupTotal(){
+  let total = 0;
+  document.querySelectorAll('#lookupResultBox .costRow input[type=checkbox]').forEach(cb => {
+    if(cb.checked) total += Number(cb.dataset.price);
+  });
+  document.getElementById('lookupTotalAmt').innerText = '₹' + total;
+}
+
+function renderBrowseGrid(){
+  const grid = document.getElementById('browseGrid');
+  if(appData.codes.length === 0){
+    grid.innerHTML = '<p style="color:var(--text-soft)">No sarees saved yet. Add one from Custom Costing.</p>';
+    return;
+  }
+  grid.innerHTML = appData.codes.map(c => `
+    <div class="browseItem" onclick="loadCodeByValue('${c.code.replace(/'/g,"\\'")}')">
+      ${c.photoUrl ? `<img src="${c.photoUrl}">` : `<div style="height:110px;background:var(--accent-soft)"></div>`}
+      <div class="bi-label">${c.name || c.code}</div>
+      <div class="bi-code">${c.code}</div>
+    </div>
+  `).join('');
+}
+
+/* ================= PAGE 2: CUSTOM COSTING ================= */
+function populateAllDropdowns(){
+  fillSelect('cc-screenPrint-select', appData.screenPrint);
+  fillSelect('cc-digital-select', appData.digital);
+  fillSelect('cc-batik-select', appData.batik);
+  fillSelect('cc-aari-select', appData.aari);
+  fillDatalist('dl-embroidery', appData.embroidery);
+  fillDatalist('dl-attach', appData.attach);
+}
+
+function fillSelect(id, list){
+  const sel = document.getElementById(id);
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- choose --</option>' +
+    list.map(item => `<option value="${item.name}" data-price="${item.price}">${item.name} — ₹${item.price}</option>`).join('');
+  sel.value = current;
+}
+
+function fillDatalist(id, list){
+  document.getElementById(id).innerHTML = list.map(item => `<option value="${item.name}">`).join('');
+}
+
+function onDropdownChange(key){
+  const sel = document.getElementById('cc-' + key + '-select');
+  const opt = sel.options[sel.selectedIndex];
+  const price = opt ? Number(opt.dataset.price || 0) : 0;
+  document.getElementById('cc-' + key + '-price').innerText = '₹' + price;
+  if(price > 0) document.getElementById('cc-' + key + '-check').checked = true;
+  updateCustomTotal();
+}
+
+function onSearchableChange(key){
+  const input = document.getElementById('cc-' + key + '-search');
+  const list = appData[key] || [];
+  const match = list.find(item => item.name.toLowerCase() === input.value.trim().toLowerCase());
+  const price = match ? match.price : 0;
+  document.getElementById('cc-' + key + '-price').innerText = '₹' + price;
+  if(price > 0) document.getElementById('cc-' + key + '-check').checked = true;
+  updateCustomTotal();
+}
+
+function getJobValue(key){
+  const checked = document.getElementById('cc-' + key + '-check').checked;
+  if(!checked) return {name:'', price:0};
+  if(key === 'fabric'){
+    return {name:'Fabric', price:Number(document.getElementById('cc-fabric-price').value)||0};
+  }
+  if(key === 'embroidery' || key === 'attach'){
+    const input = document.getElementById('cc-' + key + '-search');
+    const priceTxt = document.getElementById('cc-' + key + '-price').innerText.replace('₹','');
+    return {name:input.value, price:Number(priceTxt)||0};
+  }
+  const sel = document.getElementById('cc-' + key + '-select');
+  const opt = sel.options[sel.selectedIndex];
+  const price = opt ? Number(opt.dataset.price || 0) : 0;
+  return {name:sel.value, price:price};
+}
+
+function updateCustomTotal(){
+  const keys = ['fabric','screenPrint','digital','batik','embroidery','aari','attach'];
+  let total = 0;
+  keys.forEach(k => { total += getJobValue(k).price; });
+  document.getElementById('customTotalAmt').innerText = '₹' + total;
+}
+
+function handlePhotoSelect(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    document.getElementById('photoPreviewArea').innerHTML = `<img src="${evt.target.result}">`;
+    window._pendingPhoto = { dataUrl: evt.target.result, file: file };
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetCustomForm(){
+  document.getElementById('cc-code').value = '';
+  document.getElementById('cc-name').value = '';
+  document.getElementById('cc-fabric-price').value = '';
+  document.getElementById('photoPreviewArea').innerHTML = 'Tap to upload a photo of this saree';
+  window._pendingPhoto = null;
+  uploadedPhotoUrl = '';
+  ['screenPrint','digital','batik','aari'].forEach(k => { document.getElementById('cc-'+k+'-select').value=''; document.getElementById('cc-'+k+'-price').innerText='₹0'; document.getElementById('cc-'+k+'-check').checked=false; });
+  ['embroidery','attach'].forEach(k => { document.getElementById('cc-'+k+'-search').value=''; document.getElementById('cc-'+k+'-price').innerText='₹0'; document.getElementById('cc-'+k+'-check').checked=false; });
+  document.getElementById('cc-fabric-check').checked = true;
+  updateCustomTotal();
+  document.getElementById('customMsg').innerText = '';
+}
+
+async function saveCustomCosting(){
+  const msg = document.getElementById('customMsg');
+  msg.className=''; msg.innerText = 'Saving…';
+
+  let code = document.getElementById('cc-code').value.trim();
+  if(!code){
+    code = 'SR-' + (1000 + appData.codes.length + 1);
+  }
+  const name = document.getElementById('cc-name').value.trim();
+
+  try{
+    if(window._pendingPhoto){
+      const base64 = window._pendingPhoto.dataUrl.split(',')[1];
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          key: SECRET_KEY, action:'uploadPhoto',
+          data:{ base64, filename: code + '.jpg', mimeType: window._pendingPhoto.file.type }
+        })
+      });
+      const j = await res.json();
+      if(j.error) throw new Error(j.error);
+      uploadedPhotoUrl = j.url;
+    }
+
+    const payload = {
+      key: SECRET_KEY, action:'saveCode',
+      data:{
+        code, name, photoUrl: uploadedPhotoUrl,
+        fabric: getJobValue('fabric').price,
+        screenPrint: getJobValue('screenPrint'),
+        digital: getJobValue('digital'),
+        batik: getJobValue('batik'),
+        embroidery: getJobValue('embroidery'),
+        aari: getJobValue('aari'),
+        attach: getJobValue('attach'),
+        total: Number(document.getElementById('customTotalAmt').innerText.replace('₹',''))
+      }
+    };
+
+    const res2 = await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const j2 = await res2.json();
+    if(j2.error) throw new Error(j2.error);
+
+    msg.className='ok';
+    msg.innerText = `Saved as code ${j2.code}. It's now searchable on Code Lookup.`;
+    fetchData();
+  }catch(err){
+    msg.className='err';
+    msg.innerText = 'Could not save: ' + err.message;
+  }
+}
+</script>
+</body>
+</html>
